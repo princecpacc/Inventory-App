@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import {
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
@@ -32,6 +33,10 @@ export function AuthProvider({ children }) {
     async (email, password) => signInWithEmailAndPassword(auth, email, password),
     [],
   )
+  const register = useCallback(
+    async (email, password) => createUserWithEmailAndPassword(auth, email, password),
+    [],
+  )
   const logout = useCallback(async () => signOut(auth), [])
 
   const value = useMemo(
@@ -40,9 +45,10 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: Boolean(user),
       login,
+      register,
       logout,
     }),
-    [user, loading, login, logout],
+    [user, loading, login, register, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

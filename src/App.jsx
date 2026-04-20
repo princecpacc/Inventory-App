@@ -8,6 +8,7 @@ import { InventoryProvider } from './context/InventoryContext'
 const InventoryList = lazy(() => import('./features/inventory/InventoryList'))
 const HomePage = lazy(() => import('./pages/HomePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
+const SignupPage = lazy(() => import('./pages/SignupPage'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 
@@ -24,6 +25,7 @@ function App() {
         >
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
             <Route element={<ProtectedRoute />}>
               <Route

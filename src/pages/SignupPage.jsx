@@ -1,20 +1,18 @@
 import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-function LoginPage() {
-  const { isAuthenticated, login } = useAuth()
-  const location = useLocation()
+function SignupPage() {
+  const { isAuthenticated, register } = useAuth()
   const navigate = useNavigate()
-  const [formState, setFormState] = useState({ email: '', password: '' })
+
+  const [formState, setFormState] = useState({ email: '', password: '', confirm: '' })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [authError, setAuthError] = useState('')
 
-  const from = location.state?.from?.pathname ?? '/inventory'
-
   if (isAuthenticated) {
-    return <Navigate to={from} replace />
+    return <Navigate to="/inventory" replace />
   }
 
   const validate = () => {
@@ -32,6 +30,12 @@ function LoginPage() {
       nextErrors.password = 'Password must be at least 6 characters.'
     }
 
+    if (!formState.confirm) {
+      nextErrors.confirm = 'Please confirm your password.'
+    } else if (formState.confirm !== formState.password) {
+      nextErrors.confirm = 'Passwords do not match.'
+    }
+
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
@@ -39,11 +43,8 @@ function LoginPage() {
   const handleChange = (event) => {
     const { name, value } = event.target
     setFormState((prev) => ({ ...prev, [name]: value }))
-
     setErrors((prev) => {
-      if (!prev[name]) {
-        return prev
-      }
+      if (!prev[name]) return prev
       const next = { ...prev }
       delete next[name]
       return next
@@ -54,16 +55,18 @@ function LoginPage() {
     event.preventDefault()
     setAuthError('')
 
-    if (!validate()) {
-      return
-    }
+    if (!validate()) return
 
     setSubmitting(true)
     try {
-      await login(formState.email.trim(), formState.password)
-      navigate(from, { replace: true })
-    } catch {
-      setAuthError('Sign-in failed. Check your email/password and Firebase auth settings.')
+      await register(formState.email.trim(), formState.password)
+      navigate('/inventory', { replace: true })
+    } catch (err) {
+      if (err?.code === 'auth/email-already-in-use') {
+        setAuthError('An account with this email already exists.')
+      } else {
+        setAuthError('Sign-up failed. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -71,15 +74,16 @@ function LoginPage() {
 
   return (
     <section className="mx-auto mt-16 max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Login</h2>
+      <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Create an account</h2>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Sign in to access your inventory dashboard and form page.
+        Sign up to start managing your inventory.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           Email
           <input
+            id="signup-email"
             name="email"
             type="email"
             autoComplete="email"
@@ -94,17 +98,31 @@ function LoginPage() {
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
           Password
           <input
+            id="signup-password"
             name="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             value={formState.password}
             onChange={handleChange}
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-slate-900/10 focus:ring dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-100/10"
             required
           />
-          {errors.password ? (
-            <span className="mt-1 block text-xs text-red-600">{errors.password}</span>
-          ) : null}
+          {errors.password ? <span className="mt-1 block text-xs text-red-600">{errors.password}</span> : null}
+        </label>
+
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Confirm Password
+          <input
+            id="signup-confirm"
+            name="confirm"
+            type="password"
+            autoComplete="new-password"
+            value={formState.confirm}
+            onChange={handleChange}
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none ring-slate-900/10 focus:ring dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-100/10"
+            required
+          />
+          {errors.confirm ? <span className="mt-1 block text-xs text-red-600">{errors.confirm}</span> : null}
         </label>
 
         {authError ? (
@@ -114,22 +132,23 @@ function LoginPage() {
         ) : null}
 
         <button
+          id="signup-submit"
           type="submit"
           disabled={submitting}
           className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {submitting ? 'Signing in...' : 'Sign In'}
+          {submitting ? 'Creating account...' : 'Sign Up'}
         </button>
       </form>
 
       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-        Don't have an account?{' '}
-        <Link to="/signup" className="font-medium text-slate-700 underline dark:text-slate-200">
-          Sign up
+        Already have an account?{' '}
+        <Link to="/login" className="font-medium text-slate-700 underline dark:text-slate-200">
+          Sign in
         </Link>
       </p>
     </section>
   )
 }
 
-export default LoginPage
+export default SignupPage
